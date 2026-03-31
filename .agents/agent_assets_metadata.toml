@@ -1,0 +1,8 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "pn2RU50_4CllDQwyfLNxZ"
+uri = "file://artifacts/mobile/assets/images/icon.png"
+type = "image"
+title = "kinetic app icon"

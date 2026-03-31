@@ -1,0 +1,418 @@
+Kinetic — AI-Powered Workout Coach
+What to Build
+Build a fully functional, mobile-first web application called Kinetic — an AI-powered workout coach that generates personalized weekly workout plans, tells the user exactly what to do each day, logs their performance, and adapts future workouts based on logged data. The core value proposition is a zero-decision daily flow: the user opens the app and is told exactly what to do. Every feature must preserve this.
+Use React with Tailwind CSS, Supabase for auth + database, and the Anthropic Claude API for AI plan generation. Deploy as a modern web application.
+
+Design System — "Kinetic Onyx"
+This is a dark, premium fitness aesthetic. Follow this precisely:
+Colors
+
+Primary (neon lime): #CCFF00
+Secondary: #A2A003
+Tertiary: #C4AB04
+Neutral / Background: #121212
+Surface cards: #1A1A1A with subtle #2A2A2A borders
+Text primary: #FFFFFF
+Text secondary: #9CA3AF (muted gray)
+Success: #22C55E
+Error/Delete: #EF4444
+
+Typography
+
+Brand / Headlines: Use a bold condensed sans-serif (e.g., 'Oswald', 'Bebas Neue', or 'DM Sans' at heavy weight). Headlines should be uppercase, large, and impactful.
+Body text: 'Inter' or 'DM Sans' at regular weight, clean and readable.
+Labels/Overlines: Uppercase, letter-spaced (tracking-widest), small, muted gray.
+
+UI Patterns
+
+All cards: rounded-2xl, dark surface (#1A1A1A), subtle border or no border.
+Primary CTA buttons: full-width, #CCFF00 background, black text, rounded-full, uppercase, bold, with a right arrow icon.
+Selected/active states: #CCFF00 border glow or left accent bar.
+Icons: use lucide-react icons throughout. Muted gray default, lime when active.
+Bottom navigation bar: 3 tabs — Plan (calendar icon), Workout (dumbbell/activity icon), Progress (trending-up icon). Active tab = lime icon + label, inactive = gray.
+Progress indicators (onboarding): thin horizontal bar at top, lime fill proportional to step.
+"TODAY" badge: small pill badge in #CCFF00 with black text next to the current day.
+Rest days: moon icon, italic muted text ("Active recovery & Mobility").
+Workout cards show: day label (uppercase, small), workout title (bold), duration with clock icon, intensity tag when applicable.
+Exercise cards during workout: category label (uppercase, muted — "PRIMARY LIFT", "ACCESSORY", "ISOLATION"), exercise name (bold, large), TARGET and LOAD displayed side by side, optional grayscale exercise image below.
+
+Animation & Feel
+
+Smooth page transitions (slide or fade).
+Cards should have subtle hover/press states.
+Loading states: skeleton shimmer or a contextual message ("Building your plan...").
+The whole app should feel like a premium dark-mode fitness dashboard.
+
+
+App Architecture
+Tech Stack
+
+Frontend: React + Tailwind CSS + React Router
+Backend/Database: Supabase (Auth, PostgreSQL, Row Level Security)
+AI: Anthropic Claude API (called server-side via Supabase Edge Functions or an API route)
+State Management: React Context + useReducer for workout session state; React Query or SWR for server data
+Local Storage: Persist in-progress workout logging to localStorage for offline resilience
+
+Database Schema (Supabase/PostgreSQL)
+sql-- Users (handled by Supabase Auth, extend with profile)
+CREATE TABLE profiles (
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  onboarding_completed BOOLEAN DEFAULT FALSE,
+  streak_count INTEGER DEFAULT 0,
+  longest_streak INTEGER DEFAULT 0
+);
+
+CREATE TABLE onboarding_profiles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  goal TEXT NOT NULL CHECK (goal IN ('strength', 'muscle_gain', 'weight_loss', 'general_fitness')),
+  experience_level TEXT NOT NULL CHECK (experience_level IN ('beginner', 'some_experience', 'intermediate')),
+  equipment TEXT NOT NULL CHECK (equipment IN ('full_gym', 'dumbbells_only', 'barbells_and_dumbbells', 'bodyweight_only')),
+  time_per_workout INTEGER NOT NULL CHECK (time_per_workout IN (30, 45, 60, 75)),
+  days_per_week INTEGER NOT NULL CHECK (days_per_week IN (2, 3, 4, 5)),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE exercises (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  category TEXT NOT NULL, -- 'compound', 'accessory', 'isolation'
+  muscle_group TEXT NOT NULL, -- 'chest', 'back', 'shoulders', 'legs', 'arms', 'core', 'full_body'
+  equipment_required TEXT NOT NULL, -- matches equipment options
+  description TEXT,
+  movement_description TEXT -- 2-3 sentence how-to
+);
+
+CREATE TABLE weekly_plans (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  week_start_date DATE NOT NULL,
+  status TEXT DEFAULT 'active' CHECK (status IN ('active', 'archived')),
+  plan_data JSONB NOT NULL, -- full structured plan from AI
+  generated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE workout_sessions (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  plan_id UUID REFERENCES weekly_plans(id),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  scheduled_date DATE NOT NULL,
+  workout_title TEXT NOT NULL,
+  status TEXT DEFAULT 'scheduled' CHECK (status IN ('scheduled', 'completed', 'missed')),
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  duration_seconds INTEGER,
+  is_compressed BOOLEAN DEFAULT FALSE,
+  is_retroactive BOOLEAN DEFAULT FALSE
+);
+
+CREATE TABLE prescribed_sets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  session_id UUID REFERENCES workout_sessions(id) ON DELETE CASCADE,
+  exercise_id UUID REFERENCES exercises(id),
+  exercise_name TEXT NOT NULL,
+  exercise_category TEXT, -- 'primary', 'accessory', 'isolation'
+  set_number INTEGER NOT NULL,
+  target_reps INTEGER NOT NULL,
+  suggested_weight NUMERIC(6,2),
+  sort_order INTEGER NOT NULL
+);
+
+CREATE TABLE logged_sets (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  prescribed_set_id UUID REFERENCES prescribed_sets(id) ON DELETE CASCADE,
+  actual_reps INTEGER,
+  actual_weight NUMERIC(6,2),
+  skipped BOOLEAN DEFAULT FALSE,
+  skip_reason TEXT CHECK (skip_reason IN ('equipment_unavailable', 'injury', 'time', 'other')),
+  notes TEXT,
+  logged_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE progression_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
+  exercise_name TEXT NOT NULL,
+  event_type TEXT NOT NULL CHECK (event_type IN ('weight_increase', 'weight_decrease', 'volume_increase', 'deload')),
+  old_value NUMERIC(6,2),
+  new_value NUMERIC(6,2),
+  reason TEXT,
+  triggered_at TIMESTAMPTZ DEFAULT NOW()
+);
+Enable Row Level Security on all tables. Users can only read/write their own data.
+Seed Exercise Library
+Pre-populate the exercises table with ~80-100 standard exercises covering:
+
+Compound lifts: Bench Press, Squat, Deadlift, Overhead Press, Barbell Row, Pull-up, Dip, Leg Press, Romanian Deadlift, Front Squat, Incline Bench Press, Close-Grip Bench Press
+Accessories: Incline Dumbbell Press, Dumbbell Row, Lateral Raise, Face Pull, Leg Curl, Leg Extension, Cable Fly, Dumbbell Shoulder Press, Bulgarian Split Squat, Hip Thrust, Chest Supported Row
+Isolation: Bicep Curl (barbell, dumbbell, cable), Tricep Pushdown, Tricep Overhead Extension, Hammer Curl, Calf Raise, Rear Delt Fly, Cable Lateral Raise, Concentration Curl, Preacher Curl
+Bodyweight: Push-up, Pull-up, Chin-up, Dip, Pike Push-up, Inverted Row, Bodyweight Squat, Lunge, Glute Bridge, Plank, Mountain Climber
+
+Each exercise must include: name, category, primary muscle group, equipment_required, a 2-3 sentence movement description.
+
+Core Features to Build
+1. Authentication (Supabase Auth)
+
+Email/password registration + login
+Google OAuth ("Continue with Google")
+Password reset flow
+Persistent sessions (7 days)
+Post-login redirect: if onboarding not complete → onboarding flow; else → Today dashboard
+Account deletion from settings (soft delete → Supabase handles)
+
+2. Onboarding Flow (5 steps, one question per screen)
+The onboarding is 5 screens maximum. Each screen has one question with tappable card options. Match the UI from the design screenshots exactly:
+Step 1 — "WHAT'S YOUR GOAL?"
+Cards: Strength (dumbbell icon), Muscle Gain (bicep flex icon), Weight Loss (flame icon), General Fitness (zap/lightning icon).
+Each card: dark surface, icon in top-right, category label (uppercase muted small text like "HEAVY LIFTING"), main label bold below.
+Step 2 — "EXPERIENCE LEVEL?"
+Cards: Complete Beginner, Some Experience (6-12 months), Intermediate (1-2 years).
+Each with a brief one-line jargon-free description.
+Step 3 — "AVAILABLE EQUIPMENT?"
+Cards: Full Gym, Dumbbells Only, Barbells & Dumbbells, Bodyweight Only.
+Step 4 — "HOW LONG PER WORKOUT?"
+Cards: 30 min, 45 min, 60 min, 75+ min.
+Step 5 — "DAYS PER WEEK?"
+Cards: 2, 3, 4, 5 days.
+UX Requirements:
+
+Progress bar at top (lime fill, proportional to step).
+"STEP X OF 5" label in top-right corner.
+"KINETIC" brand in top-left (lime colored).
+"CONTINUE →" button at bottom (lime, full-width, rounded-full, disabled until selection made).
+Back navigation on steps 2-5, preserves previous answers.
+On step 5 completion → trigger plan generation with loading screen ("Building your plan...") → redirect to weekly plan view.
+
+3. AI Plan Generation (Claude API)
+When the user completes onboarding (or a new week starts), call the Claude API to generate a structured weekly plan.
+Prompt Strategy: Send the user's profile (goal, experience, equipment, days, time) plus any progression data to Claude with a system prompt that instructs it to return a strict JSON structure. Use a template-first approach: maintain a library of base plan templates and have Claude customize them.
+Claude System Prompt (for plan generation):
+You are a certified fitness coach AI. Generate a weekly workout plan as a JSON object.
+
+User Profile:
+- Goal: {goal}
+- Experience: {experience_level}
+- Equipment: {equipment}
+- Time per workout: {time_per_workout} minutes
+- Days per week: {days_per_week}
+- Progression data: {progression_context}
+
+Rules:
+1. Return ONLY valid JSON, no markdown, no explanation.
+2. Plan must cover exactly {days_per_week} training days and fill remaining days as rest.
+3. Distribute rest days so no more than 2 consecutive training days before a rest day (except 2-day plans).
+4. Do NOT front-load all training days.
+5. Exercise selection must only use equipment the user has.
+6. Volume per exercise:
+   - Beginner: 2-3 sets, 8-12 reps
+   - Some experience: 3 sets, 6-12 reps
+   - Intermediate: 3-4 sets, 5-12 reps
+7. Start weights conservatively for beginners.
+8. Each workout should have 4-7 exercises depending on time available.
+9. Include a mix of compound and isolation exercises appropriate to the goal.
+10. Workout titles should be descriptive (e.g., "Upper Body Push", "Lower Body", "Pull Day", "Full Body").
+
+Return this exact JSON structure:
+{
+  "days": [
+    {
+      "day": "Monday",
+      "type": "training" | "rest",
+      "title": "Upper Body Push",
+      "estimated_duration": 45,
+      "intensity": "moderate" | "high" | "low",
+      "exercises": [
+        {
+          "name": "Bench Press",
+          "category": "primary",
+          "muscle_group": "chest",
+          "sets": 3,
+          "reps": 8,
+          "suggested_weight_kg": 60,
+          "rest_seconds": 90,
+          "description": "Lie on bench, grip bar shoulder-width, lower to chest, press up."
+        }
+      ]
+    }
+  ]
+}
+Fallback: If the AI call fails or takes >8 seconds, serve a pre-built template plan matching the user's goal/experience/equipment combination. Show a note: "Your plan was created from a proven template — it will personalize as you log sessions."
+4. Weekly Plan View (Main Dashboard)
+This is the primary landing screen after login. Match the screenshot design:
+
+Header: Hamburger menu (left), "KINETIC" brand (center, lime), profile avatar (right).
+"CURRENT CYCLE" label (uppercase, small, muted).
+"WEEKLY PLAN" (massive bold uppercase headline).
+Motivational subtitle (muted, e.g., "Fueling the kinetic chain through structured resistance.").
+Day cards stacked vertically for all 7 days:
+
+Training days: Day name (uppercase, small, muted), workout title (bold), clock icon + duration, intensity tag if high. Completed days get a green checkmark. Today's card is highlighted with lime left border + "TODAY" pill badge.
+Rest days: Day name, "Rest Day" in italic, moon icon, "Active recovery & Mobility" muted text.
+Tapping a training day → daily workout detail view.
+
+
+Weekly Stats card at bottom: "WEEKLY STATS" header, two big stat numbers — "MINUTES ACTIVE" and "X/Y DAYS COMPLETED".
+Bottom nav bar: Plan (active/lime), Workout, Progress.
+
+5. Daily Workout View
+When user taps into a specific day or the app shows today's workout:
+
+Header: "KINETIC" brand, profile avatar.
+"TODAY'S WORKOUT" label (uppercase, small, lime).
+Workout title (massive bold uppercase, e.g., "UPPER BODY PUSH").
+Estimated time badge (clock icon + "ESTIMATED TIME: 45 MIN", muted).
+Exercise cards stacked:
+
+Category label (uppercase muted — "PRIMARY LIFT", "ACCESSORY", "ISOLATION").
+Exercise name (bold, large).
+TARGET and LOAD displayed side by side (e.g., "3 Sets × 8 Reps" and "60 kg").
+Optional grayscale placeholder image below each card (use a generic gym/exercise placeholder).
+Tapping the card expands to show the movement description.
+
+
+"START WORKOUT ▶" button at bottom (lime, full-width, rounded, sticky).
+
+6. Active Workout / Logging View
+When user taps "Start Workout":
+
+Session timer starts running at top.
+Exercises displayed sequentially, one at a time (or scrollable list).
+For each exercise, show all prescribed sets:
+
+Set number, target reps (pre-filled), suggested weight (pre-filled).
+"DONE ✓" button per set — single tap logs at prescribed values.
+Editable fields for reps and weight if user wants to change.
+Completed sets get a checkmark and dim slightly.
+
+
+Rest Timer: After completing a set, offer a countdown rest timer (90s for strength, 60s for hypertrophy). Timer shows visually (circular or bar), plays alert/vibration on complete, can be skipped.
+Skip Exercise: "Skip" button per exercise → reason picker modal (Equipment unavailable, Injury, Time, Other).
+Notes: Optional notes field per exercise (140 char max).
+Navigation: Swipe or tap to move between exercises. Progress indicator showing "Exercise 3 of 6".
+"FINISH WORKOUT" button always accessible.
+
+7. Workout Completion Summary
+After finishing:
+
+Completion card: Motivational message ("Workout Complete!", "Great session!").
+Stats summary: Exercises completed vs. total, total volume (sets × reps × weight), session duration.
+Progression notes: If any weight changes were triggered, show them here (e.g., "Bench Press ↑ 62.5 kg — great consistency!").
+PR detection: If any exercise set was the heaviest ever logged, show a "NEW PR!" badge.
+"BACK TO PLAN" button.
+Update the weekly plan view to mark today as completed.
+
+8. Adaptive Progression Engine (Backend Logic — NOT AI)
+This is deterministic rule-based code. Run after each completed session:
+javascript// Progression Rules (implement as backend functions):
+
+// Rule 1: Weight Increase
+// If user completed ALL prescribed reps for ALL sets of an exercise 
+// at the same weight for 2 CONSECUTIVE sessions → increase weight.
+// Compound lifts: +2.5 kg, Isolation: +1.25 kg
+
+// Rule 2: Weight Decrease  
+// If user failed to complete minimum target reps for 2 CONSECUTIVE 
+// sessions → reduce weight by one increment.
+
+// Rule 3: Volume Increase
+// After 3 consecutive weeks of completing ≥75% of scheduled sessions 
+// → add 1 set to primary exercises (max ceiling applies).
+
+// Rule 4: Deload
+// If 2+ sessions missed in a week → next week volume reduced ~15-20%.
+
+// Rule 5: Proactive Increase
+// If user consistently logs significantly more reps than prescribed 
+// (e.g., prescribed 8, logs 12+) for 2 sessions → increase weight.
+
+// Edge Cases:
+// - Partial workouts: only apply progression to exercises with complete data.
+// - <50% sessions logged in 2 weeks: pause progression, hold current weights.
+// - First 2 sessions: no progression applied (baseline period).
+// - 7+ day gap: treat next session as fresh baseline.
+Store all progression events in the progression_events table for transparency.
+9. Progress Screen
+Accessible from bottom nav "Progress" tab:
+
+Strength Progress: Line chart per exercise showing heaviest weight over time (use Recharts or Chart.js).
+Personal Records: List of PRs with exercise name, weight, date.
+Summary Stats: Total workouts completed, total weeks active, current streak, most improved lift.
+Workout History: Reverse chronological list of all completed sessions. Tap to see full detail.
+
+10. Consistency & Streaks
+
+Weekly completion indicator on dashboard: "3/5 DAYS COMPLETED" with a visual progress ring or bar.
+Streak counter on dashboard or profile: consecutive weeks with ≥75% completion.
+Milestone messages at 1, 4, 8, 12 week streaks.
+Missed session check-in: If a scheduled session wasn't completed by midnight, next login shows a non-judgmental prompt:
+
+"Missed yesterday? No problem."
+Options: "I missed it" (marks missed, triggers deload logic if pattern) or "I trained but didn't log" (opens retroactive logging).
+
+
+
+11. Settings / Profile
+Accessible from hamburger menu or profile icon:
+
+View/edit onboarding preferences (goal, equipment, days, time). Changes take effect next week.
+Account settings (email, password change).
+Delete account.
+Log out.
+
+12. Workout Flexibility Features
+
+"I have less time today" button on daily workout view → time picker (20, 30, 45 min) → app removes lower-priority exercises, keeps compounds.
+"Swap this exercise" on individual exercises → AI suggests alternative for same muscle group with available equipment. If AI fails, show 3 static alternatives from the exercise library.
+
+
+Edge Cases & Error Handling
+
+Plan generation failure: Show error after 10s timeout, "Try Again" button. After 3 failures, show template fallback.
+Network loss during workout logging: All logging state persists to localStorage in real-time. Banner notification "You're offline — data saved locally." Auto-sync on reconnection.
+Rest day landing: Show rest day card with moon icon, motivational message, and upcoming sessions.
+No plan exists: Redirect to onboarding.
+Duplicate session prevention: If today's session is already completed, show "Completed ✓" state. Option to log supplemental session.
+Returning after 14+ days: Show "Welcome back!" prompt with options: "Fresh Start" (re-onboarding) or "Continue" (resume with deload).
+Retroactive logging: Allow logging yesterday's missed session only (marked as "Logged late").
+
+
+Non-Functional Requirements
+
+Mobile-first responsive design. Must look great on iPhone and Android browsers.
+Touch targets minimum 44×44px.
+WCAG 2.1 AA contrast ratios (the lime-on-black palette passes this naturally).
+Page load under 3 seconds.
+Smooth 60fps transitions and animations.
+All data over HTTPS.
+
+
+File Structure
+src/
+├── components/
+│   ├── ui/           # Reusable: Button, Card, Badge, Modal, Timer, ProgressBar
+│   ├── layout/       # AppShell, BottomNav, Header
+│   ├── auth/         # LoginForm, RegisterForm, GoogleAuth
+│   ├── onboarding/   # OnboardingFlow, StepCard, ProgressIndicator
+│   ├── plan/         # WeeklyPlanView, DayCard, WeeklyStats
+│   ├── workout/      # DailyWorkoutView, ExerciseCard, ActiveSession, SetLogger, RestTimer
+│   ├── progress/     # StrengthChart, PRList, WorkoutHistory, StreakDisplay
+│   └── settings/     # ProfileSettings, PreferencesEditor
+├── hooks/            # useAuth, useWorkout, usePlan, useProgression, useTimer
+├── lib/
+│   ├── supabase.js   # Supabase client config
+│   ├── ai.js         # Claude API integration
+│   ├── progression.js # Deterministic progression engine
+│   └── templates.js  # Fallback plan templates
+├── context/          # AuthContext, WorkoutContext
+├── pages/            # Route-level components
+└── utils/            # Helpers, formatters, constants
+
+Important Implementation Notes
+
+The progression engine is NOT AI. It's deterministic JavaScript rules in progression.js. AI (Claude) is ONLY used for plan generation and exercise substitution.
+Seed the exercise database on first deploy with the full exercise library.
+localStorage fallback for all workout logging — sync to Supabase when online.
+Plan generation should happen server-side (Supabase Edge Function or API route) to protect the Claude API key.
+The app must feel complete and polished. Every screen should have proper loading states, empty states, and error states. No blank screens ever.
+Match the dark theme exactly. This is not a light-mode app. Every surface is dark. The lime accent is used sparingly for CTAs, active states, and brand elements.
