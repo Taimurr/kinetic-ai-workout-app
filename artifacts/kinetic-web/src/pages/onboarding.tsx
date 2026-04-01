@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
-import { useGeneratePlan } from "@workspace/api-client-react";
 import { useKinetic } from "@/lib/context";
 import type { UserProfile } from "@/lib/store";
 import { Dumbbell, Zap, TrendingDown, Activity, Loader2, ChevronRight, ChevronLeft } from "lucide-react";
@@ -49,13 +48,11 @@ const stepSubtitles: Record<Step, string> = {
 
 export default function Onboarding() {
   const [, navigate] = useLocation();
-  const { setProfile, setPlan } = useKinetic();
+  const { setProfile } = useKinetic();
   const [step, setStep] = useState<Step>(1);
   const [form, setForm] = useState<Partial<UserProfile>>({});
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const generatePlan = useGeneratePlan();
 
   const goNext = () => setStep((s) => Math.min(5, s + 1) as Step);
   const goBack = () => setStep((s) => Math.max(1, s - 1) as Step);
@@ -73,12 +70,10 @@ export default function Onboarding() {
 
   const handleFinish = async () => {
     const profile = form as UserProfile;
-    setProfile(profile);
     setGenerating(true);
     setError(null);
     try {
-      const plan = await generatePlan.mutateAsync({ data: profile });
-      setPlan(plan);
+      await setProfile(profile);
       navigate("/");
     } catch (e) {
       setError("Plan generation failed. Please try again.");

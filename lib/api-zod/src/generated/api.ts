@@ -63,3 +63,246 @@ export const GeneratePlanResponse = zod.object({
     }),
   ),
 });
+
+/**
+ * @summary Get the authenticated user's profile
+ */
+export const GetProfileResponse = zod.object({
+  profile: zod.union([
+    zod.object({
+      goal: zod.enum([
+        "strength",
+        "muscle_gain",
+        "weight_loss",
+        "general_fitness",
+      ]),
+      experience_level: zod.enum([
+        "beginner",
+        "some_experience",
+        "intermediate",
+      ]),
+      equipment: zod.enum([
+        "full_gym",
+        "dumbbells_only",
+        "barbells_and_dumbbells",
+        "bodyweight_only",
+      ]),
+      time_per_workout: zod.union([
+        zod.literal(30),
+        zod.literal(45),
+        zod.literal(60),
+        zod.literal(75),
+      ]),
+      days_per_week: zod.union([
+        zod.literal(2),
+        zod.literal(3),
+        zod.literal(4),
+        zod.literal(5),
+      ]),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
+ * @summary Save or update user profile and generate plan
+ */
+export const SaveProfileBody = zod.object({
+  goal: zod.enum(["strength", "muscle_gain", "weight_loss", "general_fitness"]),
+  experience_level: zod.enum(["beginner", "some_experience", "intermediate"]),
+  equipment: zod.enum([
+    "full_gym",
+    "dumbbells_only",
+    "barbells_and_dumbbells",
+    "bodyweight_only",
+  ]),
+  time_per_workout: zod.union([
+    zod.literal(30),
+    zod.literal(45),
+    zod.literal(60),
+    zod.literal(75),
+  ]),
+  days_per_week: zod.union([
+    zod.literal(2),
+    zod.literal(3),
+    zod.literal(4),
+    zod.literal(5),
+  ]),
+});
+
+export const SaveProfileResponse = zod.object({
+  days: zod.array(
+    zod.object({
+      day: zod.string(),
+      type: zod.enum(["training", "rest"]),
+      title: zod.string(),
+      estimated_duration: zod.number(),
+      intensity: zod.enum(["low", "moderate", "high"]),
+      exercises: zod.array(
+        zod.object({
+          name: zod.string(),
+          category: zod.enum(["primary", "accessory", "isolation"]),
+          muscle_group: zod.string(),
+          sets: zod.number(),
+          reps: zod.number(),
+          suggested_weight_kg: zod.number(),
+          rest_seconds: zod.number(),
+          description: zod.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Get the authenticated user's current weekly plan (with progression weights applied)
+ */
+export const GetPlanResponse = zod.object({
+  days: zod.array(
+    zod.object({
+      day: zod.string(),
+      type: zod.enum(["training", "rest"]),
+      title: zod.string(),
+      estimated_duration: zod.number(),
+      intensity: zod.enum(["low", "moderate", "high"]),
+      exercises: zod.array(
+        zod.object({
+          name: zod.string(),
+          category: zod.enum(["primary", "accessory", "isolation"]),
+          muscle_group: zod.string(),
+          sets: zod.number(),
+          reps: zod.number(),
+          suggested_weight_kg: zod.number(),
+          rest_seconds: zod.number(),
+          description: zod.string(),
+        }),
+      ),
+    }),
+  ),
+});
+
+/**
+ * @summary Get all workout sessions for the authenticated user
+ */
+export const GetSessionsResponse = zod.object({
+  sessions: zod.array(
+    zod.object({
+      id: zod.string(),
+      day: zod.string(),
+      date: zod.coerce.date(),
+      duration_seconds: zod.number(),
+      sets_logged: zod.array(
+        zod.object({
+          exercise: zod.string(),
+          reps: zod.number(),
+          weight_kg: zod.number(),
+        }),
+      ),
+      completed: zod.boolean(),
+    }),
+  ),
+});
+
+/**
+ * @summary Log a completed workout session and apply progression rules
+ */
+export const LogSessionBody = zod.object({
+  day: zod.string(),
+  date: zod.coerce.date(),
+  duration_seconds: zod.number(),
+  sets_logged: zod.array(
+    zod.object({
+      exercise: zod.string(),
+      reps: zod.number(),
+      weight_kg: zod.number(),
+    }),
+  ),
+  completed: zod.boolean(),
+});
+
+export const LogSessionResponse = zod.object({
+  session: zod.object({
+    id: zod.string(),
+    day: zod.string(),
+    date: zod.coerce.date(),
+    duration_seconds: zod.number(),
+    sets_logged: zod.array(
+      zod.object({
+        exercise: zod.string(),
+        reps: zod.number(),
+        weight_kg: zod.number(),
+      }),
+    ),
+    completed: zod.boolean(),
+  }),
+  progression_changes: zod.array(
+    zod.object({
+      exercise: zod.string(),
+      old_weight_kg: zod.number(),
+      new_weight_kg: zod.number(),
+      reason: zod.string(),
+    }),
+  ),
+});
+
+/**
+ * @summary Get the currently authenticated user
+ */
+export const GetCurrentAuthUserHeader = zod.object({
+  Authorization: zod
+    .string()
+    .optional()
+    .describe("Opaque session token — `Bearer <sid>`."),
+});
+
+export const GetCurrentAuthUserResponse = zod.object({
+  user: zod.union([
+    zod.object({
+      id: zod.string(),
+      email: zod.string().email().nullable(),
+      firstName: zod.string().nullable(),
+      lastName: zod.string().nullable(),
+      profileImageUrl: zod.string().nullable(),
+    }),
+    zod.null(),
+  ]),
+});
+
+/**
+ * @summary Start the browser OIDC login flow
+ */
+export const BeginBrowserLoginQueryParams = zod.object({
+  returnTo: zod.coerce.string().optional(),
+});
+
+/**
+ * @summary Complete the browser OIDC login flow
+ */
+export const HandleBrowserLoginCallbackQueryParams = zod.object({
+  code: zod.coerce.string().optional(),
+  state: zod.coerce.string().optional(),
+  iss: zod.coerce.string().url().optional(),
+});
+
+/**
+ * @summary Exchange a mobile OIDC code for a session token
+ */
+
+export const ExchangeMobileAuthorizationCodeBody = zod.object({
+  code: zod.string().min(1),
+  code_verifier: zod.string().min(1),
+  redirect_uri: zod.string().url().min(1),
+  state: zod.string().min(1),
+  nonce: zod.string().min(1).optional(),
+});
+
+export const ExchangeMobileAuthorizationCodeResponse = zod.object({
+  token: zod.string(),
+});
+
+/**
+ * @summary Delete a mobile session token
+ */
+export const LogoutMobileSessionResponse = zod.object({
+  success: zod.boolean(),
+});

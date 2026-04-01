@@ -118,3 +118,103 @@ export interface DayPlan {
 export interface WeeklyPlan {
   days: DayPlan[];
 }
+
+export interface UserProfileResponse {
+  profile: GeneratePlanBody | null;
+}
+
+export interface SetLogged {
+  exercise: string;
+  reps: number;
+  weight_kg: number;
+}
+
+export interface LogSessionBody {
+  day: string;
+  date: string;
+  duration_seconds: number;
+  sets_logged: SetLogged[];
+  completed: boolean;
+}
+
+export interface WorkoutSession {
+  id: string;
+  day: string;
+  date: string;
+  duration_seconds: number;
+  sets_logged: SetLogged[];
+  completed: boolean;
+}
+
+export interface SessionsResponse {
+  sessions: WorkoutSession[];
+}
+
+export interface ProgressionChange {
+  exercise: string;
+  old_weight_kg: number;
+  new_weight_kg: number;
+  reason: string;
+}
+
+export interface LogSessionResponse {
+  session: WorkoutSession;
+  progression_changes: ProgressionChange[];
+}
+
+export interface AuthUser {
+  id: string;
+  /** @nullable */
+  email: string | null;
+  /** @nullable */
+  firstName: string | null;
+  /** @nullable */
+  lastName: string | null;
+  /** @nullable */
+  profileImageUrl: string | null;
+}
+
+export interface AuthUserEnvelope {
+  user: AuthUser | null;
+}
+
+export interface MobileTokenExchangeRequest {
+  /** @minLength 1 */
+  code: string;
+  /** @minLength 1 */
+  code_verifier: string;
+  /** @minLength 1 */
+  redirect_uri: string;
+  /** @minLength 1 */
+  state: string;
+  /** @minLength 1 */
+  nonce?: string;
+}
+
+export interface MobileTokenExchangeSuccess {
+  token: string;
+}
+
+export const LogoutSuccessValue = {
+  success: true,
+} as const;
+export type LogoutSuccess = typeof LogoutSuccessValue;
+
+export interface ErrorEnvelope {
+  error: string;
+}
+
+/**
+ * Opaque session token — `Bearer <sid>`.
+ */
+export type AuthorizationSessionHeaderParameter = string;
+
+export type BeginBrowserLoginParams = {
+  returnTo?: string;
+};
+
+export type HandleBrowserLoginCallbackParams = {
+  code?: string;
+  state?: string;
+  iss?: string;
+};

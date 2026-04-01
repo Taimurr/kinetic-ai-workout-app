@@ -108,7 +108,7 @@ export default function Session() {
     setRestTimer(null);
   };
 
-  const finishWorkout = () => {
+  const finishWorkout = async () => {
     const session: WorkoutSession = {
       day: dayPlan.day,
       date: new Date().toISOString(),
@@ -116,7 +116,11 @@ export default function Session() {
       sets_logged: loggedSets,
       completed: true,
     };
-    addSession(session);
+    try {
+      await addSession(session);
+    } catch {
+      // session still shows complete even if save fails
+    }
     setFinished(true);
   };
 

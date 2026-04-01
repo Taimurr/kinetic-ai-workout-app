@@ -58,7 +58,7 @@ Return this EXACT JSON structure with no extra text:
   ]
 }`;
 
-function buildTemplatePlan(body: any) {
+export function buildTemplatePlan(body: any) {
   const { goal, experience_level, equipment, time_per_workout, days_per_week } = body;
 
   const trainingSplit: Record<number, string[]> = {

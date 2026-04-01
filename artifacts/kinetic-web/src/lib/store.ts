@@ -1,9 +1,11 @@
-import { useState, useEffect } from 'react';
-import type { GeneratePlanBody, WeeklyPlan, DayPlan, Exercise } from '@workspace/api-client-react';
+import { useState, useEffect, useCallback } from 'react';
+import type { GeneratePlanBody, WeeklyPlan } from '@workspace/api-client-react';
+import { useAuth } from '@workspace/replit-auth-web';
 
 export interface UserProfile extends GeneratePlanBody {}
 
 export interface WorkoutSession {
+  id?: string;
   day: string;
   date: string;
   duration_seconds: number;
@@ -11,51 +13,90 @@ export interface WorkoutSession {
   completed: boolean;
 }
 
-const PROFILE_KEY = 'kinetic_profile';
-const PLAN_KEY = 'kinetic_plan';
-const SESSIONS_KEY = 'kinetic_sessions';
+async function apiFetch<T>(path: string, options?: RequestInit): Promise<T> {
+  const res = await fetch(path, { credentials: 'include', ...options });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
 
 export function useStore() {
+  const auth = useAuth();
   const [profile, setProfileState] = useState<UserProfile | null>(null);
   const [plan, setPlanState] = useState<WeeklyPlan | null>(null);
   const [sessions, setSessionsState] = useState<WorkoutSession[]>([]);
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    const p = localStorage.getItem(PROFILE_KEY);
-    const pl = localStorage.getItem(PLAN_KEY);
-    const s = localStorage.getItem(SESSIONS_KEY);
+    if (auth.isLoading) return;
+    if (!auth.isAuthenticated) {
+      setIsLoaded(true);
+      return;
+    }
 
-    if (p) setProfileState(JSON.parse(p));
-    if (pl) setPlanState(JSON.parse(pl));
-    if (s) setSessionsState(JSON.parse(s));
-    
-    setIsLoaded(true);
+    Promise.all([
+      apiFetch<{ profile: UserProfile | null }>('/api/profile').then((d) => d.profile),
+      apiFetch<WeeklyPlan>('/api/plan').catch(() => null),
+      apiFetch<{ sessions: WorkoutSession[] }>('/api/sessions')
+        .then((d) => d.sessions)
+        .catch(() => []),
+    ])
+      .then(([p, pl, s]) => {
+        setProfileState(p);
+        setPlanState(pl);
+        setSessionsState(s);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoaded(true));
+  }, [auth.isLoading, auth.isAuthenticated]);
+
+  const setProfile = useCallback(async (p: UserProfile): Promise<WeeklyPlan> => {
+    const result = await apiFetch<WeeklyPlan>('/api/profile', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        goal: p.goal,
+        experience_level: p.experience_level,
+        equipment: p.equipment,
+        time_per_workout: p.time_per_workout,
+        days_per_week: p.days_per_week,
+      }),
+    });
+    setProfileState(p);
+    setPlanState(result);
+    return result;
   }, []);
 
-  const setProfile = (p: UserProfile) => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(p));
-    setProfileState(p);
-  };
-
-  const setPlan = (p: WeeklyPlan) => {
-    localStorage.setItem(PLAN_KEY, JSON.stringify(p));
+  const setPlan = useCallback((p: WeeklyPlan) => {
     setPlanState(p);
-  };
+  }, []);
 
-  const addSession = (s: WorkoutSession) => {
-    const newSessions = [...sessions, s];
-    localStorage.setItem(SESSIONS_KEY, JSON.stringify(newSessions));
-    setSessionsState(newSessions);
-  };
+  const addSession = useCallback(async (s: WorkoutSession): Promise<void> => {
+    const result = await apiFetch<{ session: WorkoutSession; progression_changes: any[] }>('/api/sessions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        day: s.day,
+        date: s.date,
+        duration_seconds: s.duration_seconds,
+        sets_logged: s.sets_logged,
+        completed: s.completed,
+      }),
+    });
+    setSessionsState((prev) => [...prev, result.session]);
+    if (result.progression_changes.length > 0 && plan) {
+      const updatedPlan = await apiFetch<WeeklyPlan>('/api/plan').catch(() => null);
+      if (updatedPlan) setPlanState(updatedPlan);
+    }
+  }, [plan]);
 
   return {
+    auth,
     isLoaded,
     profile,
     setProfile,
     plan,
     setPlan,
     sessions,
-    addSession
+    addSession,
   };
 }

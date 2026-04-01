@@ -6,9 +6,14 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./authorizationSessionHeaderParameter";
+export * from "./authUser";
+export * from "./authUserEnvelope";
+export * from "./beginBrowserLoginParams";
 export * from "./dayPlan";
 export * from "./dayPlanIntensity";
 export * from "./dayPlanType";
+export * from "./errorEnvelope";
 export * from "./errorResponse";
 export * from "./exercise";
 export * from "./exerciseCategory";
@@ -18,5 +23,16 @@ export * from "./generatePlanBodyEquipment";
 export * from "./generatePlanBodyExperienceLevel";
 export * from "./generatePlanBodyGoal";
 export * from "./generatePlanBodyTimePerWorkout";
+export * from "./handleBrowserLoginCallbackParams";
 export * from "./healthStatus";
+export * from "./logoutSuccess";
+export * from "./logSessionBody";
+export * from "./logSessionResponse";
+export * from "./mobileTokenExchangeRequest";
+export * from "./mobileTokenExchangeSuccess";
+export * from "./progressionChange";
+export * from "./sessionsResponse";
+export * from "./setLogged";
+export * from "./userProfileResponse";
 export * from "./weeklyPlan";
+export * from "./workoutSession";

@@ -18,24 +18,54 @@ const queryClient = new QueryClient({
   },
 });
 
+function Spinner() {
+  return (
+    <div className="min-h-screen bg-[#121212] flex items-center justify-center">
+      <div className="w-6 h-6 border-2 border-[#CCFF00]/30 border-t-[#CCFF00] rounded-full animate-spin" />
+    </div>
+  );
+}
+
+function LoginScreen({ onLogin }: { onLogin: () => void }) {
+  return (
+    <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center gap-8 px-4">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold text-white font-['Outfit']">
+          <span className="text-[#CCFF00]">KINETIC</span>
+        </h1>
+        <p className="text-[#888] mt-2 text-sm tracking-widest uppercase">
+          AI Workout Coach
+        </p>
+      </div>
+      <button
+        onClick={onLogin}
+        className="bg-[#CCFF00] text-[#121212] font-bold py-3 px-8 rounded-lg text-sm tracking-widest uppercase hover:bg-[#b8e600] transition-colors"
+      >
+        Sign In with Replit
+      </button>
+    </div>
+  );
+}
+
 function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { isLoaded, profile, plan } = useKinetic();
+  const { auth, isLoaded, profile } = useKinetic();
   const [location, navigate] = useLocation();
 
   useEffect(() => {
-    if (!isLoaded) return;
+    if (auth.isLoading || !isLoaded) return;
+    if (!auth.isAuthenticated) return;
     const onOnboarding = location.startsWith("/onboarding");
     if (!profile && !onOnboarding) {
       navigate("/onboarding");
     }
-  }, [isLoaded, profile, location]);
+  }, [auth.isLoading, auth.isAuthenticated, isLoaded, profile, location]);
 
-  if (!isLoaded) {
-    return (
-      <div className="min-h-screen bg-[#121212] flex items-center justify-center">
-        <div className="w-6 h-6 border-2 border-[#CCFF00]/30 border-t-[#CCFF00] rounded-full animate-spin" />
-      </div>
-    );
+  if (auth.isLoading || (auth.isAuthenticated && !isLoaded)) {
+    return <Spinner />;
+  }
+
+  if (!auth.isAuthenticated) {
+    return <LoginScreen onLogin={auth.login} />;
   }
 
   return <>{children}</>;
