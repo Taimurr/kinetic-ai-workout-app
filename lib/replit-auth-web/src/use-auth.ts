@@ -11,6 +11,23 @@ interface AuthState {
   logout: () => void;
 }
 
+export async function loginWithCredentials(
+  email: string,
+  password: string,
+): Promise<void> {
+  const res = await fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!res.ok) {
+    const data = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(data.error ?? `Login failed (${res.status})`);
+  }
+}
+
 export function useAuth(): AuthState {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);

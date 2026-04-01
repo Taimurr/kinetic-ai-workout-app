@@ -3,7 +3,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { KineticProvider, useKinetic } from "@/lib/context";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { loginWithCredentials } from "@workspace/replit-auth-web";
 import Onboarding from "@/pages/onboarding";
 import Plan from "@/pages/plan";
 import Workout from "@/pages/workout";
@@ -26,7 +27,25 @@ function Spinner() {
   );
 }
 
-function LoginScreen({ onLogin }: { onLogin: () => void }) {
+function LoginScreen() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      await loginWithCredentials(email, password);
+      window.location.reload();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Sign in failed");
+      setLoading(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-[#121212] flex flex-col items-center justify-center gap-8 px-4">
       <div className="text-center">
@@ -37,12 +56,41 @@ function LoginScreen({ onLogin }: { onLogin: () => void }) {
           AI Workout Coach
         </p>
       </div>
-      <button
-        onClick={onLogin}
-        className="bg-[#CCFF00] text-[#121212] font-bold py-3 px-8 rounded-lg text-sm tracking-widest uppercase hover:bg-[#b8e600] transition-colors"
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-col gap-3 w-full max-w-sm"
       >
-        Sign In with Replit
-      </button>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          className="bg-[#1A1A1A] text-white placeholder-[#555] border border-[#333] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#CCFF00] transition-colors"
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="bg-[#1A1A1A] text-white placeholder-[#555] border border-[#333] rounded-lg px-4 py-3 text-sm focus:outline-none focus:border-[#CCFF00] transition-colors"
+        />
+        {error && (
+          <p className="text-red-400 text-xs text-center">{error}</p>
+        )}
+        <button
+          type="submit"
+          disabled={loading}
+          className="bg-[#CCFF00] text-[#121212] font-bold py-3 px-8 rounded-lg text-sm tracking-widest uppercase hover:bg-[#b8e600] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {loading ? "Signing in…" : "Sign In"}
+        </button>
+      </form>
+
+      <p className="text-[#555] text-xs">
+        Demo mode — any email/password works
+      </p>
     </div>
   );
 }
@@ -65,7 +113,7 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   if (!auth.isAuthenticated) {
-    return <LoginScreen onLogin={auth.login} />;
+    return <LoginScreen />;
   }
 
   return <>{children}</>;
