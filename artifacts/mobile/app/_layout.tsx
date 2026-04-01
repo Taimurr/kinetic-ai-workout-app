@@ -30,6 +30,7 @@ function RootLayoutNav() {
       <Stack.Screen name="onboarding" />
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="workout" />
+      <Stack.Screen name="profile" />
     </Stack>
   );
 }

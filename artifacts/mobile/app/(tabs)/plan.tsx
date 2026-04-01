@@ -89,7 +89,7 @@ export default function PlanScreen() {
           <Menu size={22} color={colors.mutedForeground} />
         </TouchableOpacity>
         <KineticText variant="brand" lime>KINETIC</KineticText>
-        <TouchableOpacity style={styles.headerBtn}>
+        <TouchableOpacity style={styles.headerBtn} onPress={() => router.push("/profile")}>
           <User size={22} color={colors.mutedForeground} />
         </TouchableOpacity>
       </View>
