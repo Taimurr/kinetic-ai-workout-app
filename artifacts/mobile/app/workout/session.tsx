@@ -159,10 +159,10 @@ export default function SessionScreen() {
             </View>
 
             <View style={[styles.setHeaderRow, { borderBottomColor: colors.border }]}>
-              <KineticText variant="label" style={{ color: colors.mutedForeground, width: 30, fontSize: 9 }}>SET</KineticText>
+              <KineticText variant="label" style={{ color: colors.mutedForeground, width: 28, fontSize: 9 }}>SET</KineticText>
               <KineticText variant="label" style={{ color: colors.mutedForeground, flex: 1, fontSize: 9 }}>REPS</KineticText>
               <KineticText variant="label" style={{ color: colors.mutedForeground, flex: 1, fontSize: 9 }}>KG</KineticText>
-              <View style={{ width: 72 }} />
+              <View style={{ width: 60 }} />
             </View>
 
             {Array.from({ length: ex.sets }, (_, i) => i + 1).map((setNum) => {
@@ -261,22 +261,22 @@ const styles = StyleSheet.create({
   setHeaderRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingVertical: 8,
     borderBottomWidth: 1,
-    gap: 8,
+    gap: 6,
   },
   setRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    gap: 6,
   },
   setNumBadge: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -288,9 +288,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontFamily: "Inter_600SemiBold",
     fontSize: 15,
+    minWidth: 0,
   },
-  setActions: { flexDirection: "row", gap: 6, width: 72, justifyContent: "flex-end" },
-  actionBtn: { width: 32, height: 32, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+  setActions: { flexDirection: "row", gap: 4, width: 60, justifyContent: "flex-end" },
+  actionBtn: { width: 28, height: 28, borderRadius: 7, alignItems: "center", justifyContent: "center" },
   cta: {
     position: "absolute",
     bottom: 0,
