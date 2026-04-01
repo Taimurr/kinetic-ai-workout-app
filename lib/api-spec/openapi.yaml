@@ -1,22 +1,22 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Kinetic API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: plans
+    description: Workout plan generation
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +24,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /generate-plan:
+    post:
+      operationId: generatePlan
+      tags: [plans]
+      summary: Generate a personalized weekly workout plan via AI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GeneratePlanBody"
+      responses:
+        "200":
+          description: Generated weekly plan
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WeeklyPlan"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 components:
   schemas:
     HealthStatus:
@@ -33,4 +57,98 @@ components:
           type: string
       required:
         - status
-
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+    GeneratePlanBody:
+      type: object
+      properties:
+        goal:
+          type: string
+          enum: [strength, muscle_gain, weight_loss, general_fitness]
+        experience_level:
+          type: string
+          enum: [beginner, some_experience, intermediate]
+        equipment:
+          type: string
+          enum: [full_gym, dumbbells_only, barbells_and_dumbbells, bodyweight_only]
+        time_per_workout:
+          type: integer
+          enum: [30, 45, 60, 75]
+        days_per_week:
+          type: integer
+          enum: [2, 3, 4, 5]
+      required:
+        - goal
+        - experience_level
+        - equipment
+        - time_per_workout
+        - days_per_week
+    Exercise:
+      type: object
+      properties:
+        name:
+          type: string
+        category:
+          type: string
+          enum: [primary, accessory, isolation]
+        muscle_group:
+          type: string
+        sets:
+          type: integer
+        reps:
+          type: integer
+        suggested_weight_kg:
+          type: number
+        rest_seconds:
+          type: integer
+        description:
+          type: string
+      required:
+        - name
+        - category
+        - muscle_group
+        - sets
+        - reps
+        - suggested_weight_kg
+        - rest_seconds
+        - description
+    DayPlan:
+      type: object
+      properties:
+        day:
+          type: string
+        type:
+          type: string
+          enum: [training, rest]
+        title:
+          type: string
+        estimated_duration:
+          type: integer
+        intensity:
+          type: string
+          enum: [low, moderate, high]
+        exercises:
+          type: array
+          items:
+            $ref: "#/components/schemas/Exercise"
+      required:
+        - day
+        - type
+        - title
+        - estimated_duration
+        - intensity
+        - exercises
+    WeeklyPlan:
+      type: object
+      properties:
+        days:
+          type: array
+          items:
+            $ref: "#/components/schemas/DayPlan"
+      required:
+        - days
