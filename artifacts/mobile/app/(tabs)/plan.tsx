@@ -216,19 +216,19 @@ export default function PlanScreen() {
           </KineticText>
           <View style={styles.statsRow}>
             <View style={styles.stat}>
-              <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 40, color: colors.primary }}>
+              <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 28, color: colors.primary, lineHeight: 32 }}>
                 {weeklyMinutes}
               </KineticText>
-              <KineticText variant="label" style={{ color: colors.mutedForeground, marginTop: 4 }}>
+              <KineticText variant="label" style={{ color: colors.mutedForeground, marginTop: 4, fontSize: 10 }}>
                 MINUTES ACTIVE
               </KineticText>
             </View>
             <View style={[styles.statDivider, { backgroundColor: colors.border }]} />
             <View style={styles.stat}>
-              <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 40, color: colors.primary }}>
+              <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 28, color: colors.primary, lineHeight: 32 }}>
                 {daysCompleted}/{totalDays}
               </KineticText>
-              <KineticText variant="label" style={{ color: colors.mutedForeground, marginTop: 4 }}>
+              <KineticText variant="label" style={{ color: colors.mutedForeground, marginTop: 4, fontSize: 10 }}>
                 DAYS COMPLETED
               </KineticText>
             </View>

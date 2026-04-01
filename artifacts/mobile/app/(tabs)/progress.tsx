@@ -61,13 +61,13 @@ export default function ProgressScreen() {
                   style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
                   <View style={styles.statIcon}>{s.icon}</View>
-                  <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 34, color: colors.text }}>
+                  <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 24, color: colors.text, lineHeight: 28 }}>
                     {s.value}
                   </KineticText>
                   <KineticText variant="label" style={{ color: colors.mutedForeground, fontSize: 9, marginTop: 2 }}>
                     {s.unit}
                   </KineticText>
-                  <KineticText variant="label" style={{ color: colors.mutedForeground, marginTop: 8, fontSize: 10 }}>
+                  <KineticText variant="label" style={{ color: colors.mutedForeground, marginTop: 6, fontSize: 9, letterSpacing: 0.5 }}>
                     {s.label}
                   </KineticText>
                 </View>
