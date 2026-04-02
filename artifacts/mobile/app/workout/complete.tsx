@@ -49,7 +49,7 @@ export default function CompleteScreen() {
 
         <View style={styles.stats}>
           <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 36, color: colors.primary }}>
+            <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 28, lineHeight: 34, color: colors.primary }}>
               {durationMin}
             </KineticText>
             <KineticText variant="label" style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>
@@ -59,8 +59,8 @@ export default function CompleteScreen() {
 
           <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
             <View style={styles.streakRow}>
-              <Flame size={28} color="#EF4444" />
-              <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 36, color: colors.text }}>
+              <Flame size={24} color="#EF4444" />
+              <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 28, lineHeight: 34, color: colors.text }}>
                 {progress.streakCount}
               </KineticText>
             </View>

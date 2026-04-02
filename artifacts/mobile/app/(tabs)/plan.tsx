@@ -47,7 +47,7 @@ function isDayCompleted(dayName: string, completedDays: { dayName: string; date:
 export default function PlanScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { weeklyPlan, progress, generatePlan, profile, isGeneratingPlan } = useApp();
+  const { weeklyPlan, progress, generatePlan, profile, isGeneratingPlan, resetApp } = useApp();
   const [refreshing, setRefreshing] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
 
@@ -243,7 +243,7 @@ export default function PlanScreen() {
               style={styles.menuItem}
               onPress={async () => {
                 setMenuVisible(false);
-                if (profile) await generatePlan(profile);
+                await resetApp();
               }}
             >
               <RefreshCw size={18} color={colors.primary} />
