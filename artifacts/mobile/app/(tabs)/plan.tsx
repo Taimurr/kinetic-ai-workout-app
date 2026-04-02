@@ -21,6 +21,7 @@ import {
   User,
   Zap,
   RefreshCw,
+  Plus,
 } from "lucide-react-native";
 
 import { useColors } from "@/hooks/useColors";
@@ -73,11 +74,26 @@ export default function PlanScreen() {
 
   if (!weeklyPlan) {
     return (
-      <View style={[styles.empty, { backgroundColor: colors.background }]}>
-        <KineticText variant="title" style={{ textAlign: "center", marginBottom: 8 }}>No plan yet</KineticText>
-        <KineticText variant="muted" style={{ textAlign: "center", color: colors.mutedForeground }}>
-          Complete onboarding to generate your personalized plan.
+      <View style={[styles.empty, { backgroundColor: colors.background, paddingTop: topInset, paddingBottom: bottomInset + 80 }]}>
+        <View style={[styles.plusCircle, { borderColor: colors.primary }]}>
+          <Plus size={48} color={colors.primary} strokeWidth={1.5} />
+        </View>
+        <KineticText variant="headline" style={{ textAlign: "center", marginTop: 32 }}>
+          CREATE A NEW
         </KineticText>
+        <KineticText variant="headline" lime style={{ textAlign: "center" }}>
+          WORKOUT PLAN
+        </KineticText>
+        <KineticText
+          variant="muted"
+          style={{ textAlign: "center", color: colors.mutedForeground, marginTop: 12, marginBottom: 40, paddingHorizontal: 32 }}
+        >
+          Answer a few quick questions and we'll build a personalized plan for your goals.
+        </KineticText>
+        <PrimaryButton
+          label="GET STARTED"
+          onPress={() => router.replace("/onboarding/step1")}
+        />
       </View>
     );
   }
@@ -258,7 +274,15 @@ export default function PlanScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  empty: { flex: 1, justifyContent: "center", alignItems: "center", padding: 24 },
+  empty: { flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 24 },
+  plusCircle: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+    borderWidth: 2,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
