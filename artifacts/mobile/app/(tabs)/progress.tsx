@@ -1,5 +1,6 @@
 import React from "react";
 import { View, ScrollView, StyleSheet, Platform } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { TrendingUp, Flame, Clock, Award, Dumbbell } from "lucide-react-native";
 
@@ -56,8 +57,9 @@ export default function ProgressScreen() {
           <>
             <View style={styles.statsGrid}>
               {statCards.map((s, i) => (
-                <View
+                <Animated.View
                   key={i}
+                  entering={FadeInDown.delay(i * 80).springify().damping(18)}
                   style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
                 >
                   <View style={styles.statIcon}>{s.icon}</View>
@@ -70,7 +72,7 @@ export default function ProgressScreen() {
                   <KineticText variant="label" style={{ color: colors.mutedForeground, marginTop: 6, fontSize: 9, letterSpacing: 0.5 }}>
                     {s.label}
                   </KineticText>
-                </View>
+                </Animated.View>
               ))}
             </View>
 

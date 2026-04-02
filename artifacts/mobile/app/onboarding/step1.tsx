@@ -1,6 +1,7 @@
 import { Dumbbell, Flame, UserRound, Zap } from "lucide-react-native";
 import React, { useState } from "react";
 import { ScrollView, View, StyleSheet, Platform } from "react-native";
+import Animated, { FadeInDown } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 
@@ -47,21 +48,22 @@ export default function Step1Screen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.question}>
+        <Animated.View entering={FadeInDown.delay(100).springify().damping(18)} style={styles.question}>
           <KineticText variant="headline">WHAT'S YOUR</KineticText>
           <KineticText variant="headline" lime>GOAL?</KineticText>
-        </View>
+        </Animated.View>
 
         <View style={styles.cards}>
-          {GOALS.map((goal) => (
-            <SelectionCard
-              key={goal.value}
-              label={goal.label}
-              sublabel={goal.sublabel}
-              icon={goal.icon}
-              selected={selected === goal.value}
-              onPress={() => setSelected(goal.value)}
-            />
+          {GOALS.map((goal, i) => (
+            <Animated.View key={goal.value} entering={FadeInDown.delay(180 + i * 70).springify().damping(18)}>
+              <SelectionCard
+                label={goal.label}
+                sublabel={goal.sublabel}
+                icon={goal.icon}
+                selected={selected === goal.value}
+                onPress={() => setSelected(goal.value)}
+              />
+            </Animated.View>
           ))}
         </View>
       </ScrollView>

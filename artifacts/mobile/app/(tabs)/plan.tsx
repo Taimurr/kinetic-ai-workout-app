@@ -9,6 +9,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
+import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import {
@@ -141,14 +142,14 @@ export default function PlanScreen() {
         </View>
 
         <View style={styles.days}>
-          {weeklyPlan.days.map((day) => {
+          {weeklyPlan.days.map((day, index) => {
             const isToday = day.day === today;
             const isCompleted = isDayCompleted(day.day, progress.completedDays);
             const isRest = day.type === "rest";
 
             return (
+              <Animated.View key={day.day} entering={FadeInDown.delay(index * 60).springify().damping(18)}>
               <TouchableOpacity
-                key={day.day}
                 onPress={() => handleDayPress(day)}
                 activeOpacity={isRest ? 1 : 0.8}
                 style={[
@@ -222,11 +223,12 @@ export default function PlanScreen() {
                   )}
                 </View>
               </TouchableOpacity>
+              </Animated.View>
             );
           })}
         </View>
 
-        <View style={[styles.statsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+        <Animated.View entering={FadeInDown.delay(500).springify().damping(18)} style={[styles.statsCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
           <KineticText variant="label" style={{ color: colors.mutedForeground, marginBottom: 16 }}>
             WEEKLY STATS
           </KineticText>
@@ -249,7 +251,7 @@ export default function PlanScreen() {
               </KineticText>
             </View>
           </View>
-        </View>
+        </Animated.View>
       </ScrollView>
 
       <Modal visible={menuVisible} transparent animationType="fade">

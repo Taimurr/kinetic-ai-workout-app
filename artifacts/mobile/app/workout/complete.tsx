@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, StyleSheet, Animated, Platform } from "react-native";
+import AnimatedRN, { FadeInDown, FadeIn, ZoomIn } from "react-native-reanimated";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { Trophy, Flame } from "lucide-react-native";
@@ -36,28 +37,35 @@ export default function CompleteScreen() {
           </View>
         </Animated.View>
 
-        <KineticText variant="headline" style={{ textAlign: "center", marginTop: 32 }}>
-          WORKOUT
-        </KineticText>
-        <KineticText variant="headline" lime style={{ textAlign: "center" }}>
-          COMPLETE!
-        </KineticText>
-
-        <KineticText variant="muted" style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 12 }}>
-          Another session in the books. Stay consistent.
-        </KineticText>
+        <AnimatedRN.View entering={FadeInDown.delay(200).springify().damping(16)}>
+          <KineticText variant="headline" style={{ textAlign: "center", marginTop: 32 }}>
+            WORKOUT
+          </KineticText>
+          <KineticText variant="headline" lime style={{ textAlign: "center" }}>
+            COMPLETE!
+          </KineticText>
+          <KineticText variant="muted" style={{ color: colors.mutedForeground, textAlign: "center", marginTop: 12 }}>
+            Another session in the books. Stay consistent.
+          </KineticText>
+        </AnimatedRN.View>
 
         <View style={styles.stats}>
-          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <AnimatedRN.View
+            entering={FadeInDown.delay(350).springify().damping(16)}
+            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
             <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 28, lineHeight: 34, color: colors.primary }}>
               {durationMin}
             </KineticText>
             <KineticText variant="label" style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>
               MINUTES
             </KineticText>
-          </View>
+          </AnimatedRN.View>
 
-          <View style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+          <AnimatedRN.View
+            entering={FadeInDown.delay(450).springify().damping(16)}
+            style={[styles.statCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+          >
             <View style={styles.streakRow}>
               <Flame size={24} color="#EF4444" />
               <KineticText style={{ fontFamily: "Inter_700Bold", fontSize: 28, lineHeight: 34, color: colors.text }}>
@@ -67,16 +75,16 @@ export default function CompleteScreen() {
             <KineticText variant="label" style={{ color: colors.mutedForeground, fontSize: 10, marginTop: 4 }}>
               DAY STREAK
             </KineticText>
-          </View>
+          </AnimatedRN.View>
         </View>
       </View>
 
-      <View style={[styles.footer, { paddingBottom: bottomInset + 24 }]}>
+      <AnimatedRN.View entering={FadeInDown.delay(550).springify().damping(16)} style={[styles.footer, { paddingBottom: bottomInset + 24 }]}>
         <PrimaryButton
           label="BACK TO PLAN"
           onPress={() => router.replace("/(tabs)/plan")}
         />
-      </View>
+      </AnimatedRN.View>
     </View>
   );
 }

@@ -1,5 +1,12 @@
 import React from "react";
-import { TouchableOpacity, StyleSheet, View } from "react-native";
+import { Pressable, StyleSheet, View } from "react-native";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring,
+  withTiming,
+  interpolateColor,
+} from "react-native-reanimated";
 import { useColors } from "@/hooks/useColors";
 import { KineticText } from "./KineticText";
 import * as Haptics from "expo-haptics";
@@ -14,6 +21,34 @@ interface SelectionCardProps {
 
 export function SelectionCard({ label, sublabel, icon, selected, onPress }: SelectionCardProps) {
   const colors = useColors();
+  const scale = useSharedValue(1);
+  const selectedProgress = useSharedValue(selected ? 1 : 0);
+
+  React.useEffect(() => {
+    selectedProgress.value = withTiming(selected ? 1 : 0, { duration: 200 });
+  }, [selected]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    borderColor: interpolateColor(
+      selectedProgress.value,
+      [0, 1],
+      [colors.border, colors.primary]
+    ),
+  }));
+
+  const barStyle = useAnimatedStyle(() => ({
+    opacity: selectedProgress.value,
+    transform: [{ scaleY: selectedProgress.value }],
+  }));
+
+  const handlePressIn = () => {
+    scale.value = withSpring(0.97, { damping: 20, stiffness: 400 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
+  };
 
   const handlePress = () => {
     Haptics.selectionAsync();
@@ -21,33 +56,32 @@ export function SelectionCard({ label, sublabel, icon, selected, onPress }: Sele
   };
 
   return (
-    <TouchableOpacity
+    <Pressable
       onPress={handlePress}
-      activeOpacity={0.8}
-      style={[
-        styles.card,
-        {
-          backgroundColor: colors.card,
-          borderWidth: 1.5,
-          borderColor: selected ? colors.primary : colors.border,
-        },
-      ]}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
     >
-      {selected && (
-        <View style={[styles.selectedBar, { backgroundColor: colors.primary }]} />
-      )}
-      <View style={styles.content}>
-        {sublabel && (
-          <KineticText variant="label" style={{ color: colors.mutedForeground, marginBottom: 4 }}>
-            {sublabel}
+      <Animated.View
+        style={[
+          styles.card,
+          { backgroundColor: colors.card, borderWidth: 1.5 },
+          animatedStyle,
+        ]}
+      >
+        <Animated.View style={[styles.selectedBar, { backgroundColor: colors.primary }, barStyle]} />
+        <View style={styles.content}>
+          {sublabel && (
+            <KineticText variant="label" style={{ color: colors.mutedForeground, marginBottom: 4 }}>
+              {sublabel}
+            </KineticText>
+          )}
+          <KineticText variant="title" style={{ fontSize: 18, letterSpacing: 0.5, textTransform: "uppercase" }}>
+            {label}
           </KineticText>
-        )}
-        <KineticText variant="title" style={{ fontSize: 18, letterSpacing: 0.5, textTransform: "uppercase" }}>
-          {label}
-        </KineticText>
-      </View>
-      {icon && <View style={styles.icon}>{icon}</View>}
-    </TouchableOpacity>
+        </View>
+        {icon && <View style={styles.icon}>{icon}</View>}
+      </Animated.View>
+    </Pressable>
   );
 }
 
