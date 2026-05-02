@@ -202,8 +202,8 @@ The API server starts on the configured `PORT` and the Vite dev server proxies A
 
 ## License
 
-MIT
-
+Not to be sold, shared, distributed nor used in adaptation with any 3rd party or by anyone, especially any professors. 
+This is for skill showcase only.
 ---
 
 ## Acknowledgments
